@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-08",
+  "project": {"name": "Shop 2", "slug": "shop-2", "package": "invoice", "summary": "An edge case: the package shares a noun's name, a noun shares a stdlib module's name, and the web has one screen noun", "database": "sqlite"},
+  "repo": {"org": "example-org", "name": "shop-2", "remote": "none"},
+  "surfaces": ["jobs", "http", "web"],
+  "nouns": [
+    {"name": "invoice", "purpose": "What is owed", "owns": ["invoices"], "operations": ["invoice.create", "invoice.show"], "roles": ["ops", "rules", "store", "model"]},
+    {"name": "line_item", "purpose": "One line of an invoice", "owns": ["line_items"], "operations": ["line_item.add"], "depends_on": ["invoice"], "screens": false},
+    {"name": "json", "purpose": "A stored export, named to collide with the standard library on purpose", "operations": ["json.export"], "screens": false}
+  ],
+  "adapters": [{"name": "mailer", "wraps": "smtplib", "implements": "Mailer", "purpose": "Sends mail over SMTP"}],
+  "first_operation": "invoice.create",
+  "addons": {"agent_skills": true}
+}

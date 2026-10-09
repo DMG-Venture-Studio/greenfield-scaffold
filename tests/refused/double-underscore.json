@@ -1,0 +1,35 @@
+{
+ "date": "2026-10-08",
+ "project": {
+  "name": "Tally",
+  "slug": "tally",
+  "package": "tally",
+  "summary": "Tally reconciles a bank statement export against a household ledger. It lists every transaction found in only one of them.",
+  "database": "none"
+ },
+ "repo": {},
+ "surfaces": [
+  "cli"
+ ],
+ "nouns": [
+  {
+   "name": "line__item",
+   "purpose": "One comparison of a statement against a ledger, and its mismatches.",
+   "operations": [
+    "line__item.run"
+   ],
+   "roles": [
+    "ops",
+    "rules",
+    "model"
+   ]
+  }
+ ],
+ "first_operation": "reconciliation.run",
+ "addons": {
+  "serial_build": false,
+  "agent_skills": false,
+  "factory": false
+ },
+ "_expect": "not snake_case"
+}

@@ -1,0 +1,21 @@
+# The front end's closed vocabulary of file names, the counterpart of the backend's exhaustive roles
+# contract. Noun folders are named exactly as the backend noun. Inside a noun only the four roles exist,
+# as a file (api.ts, state.ts, ui.tsx, routes.tsx) or, for ui and routes once they grow, a folder of the
+# same name holding PascalCase components.
+ls:
+  src/nouns:
+    .dir: snake_case
+  src/nouns/*:
+    .ts: regex:^(api|state|ui|routes)$
+    .tsx: regex:^(ui|routes)$
+  src/nouns/*/ui:
+    .tsx: PascalCase
+  src/nouns/*/routes:
+    .tsx: PascalCase
+  src/kernel:
+    .ts: regex:^(http|auth|design|errors|config)$
+    .tsx: regex:^(design)$
+
+ignore:
+  - node_modules
+  - src/generated

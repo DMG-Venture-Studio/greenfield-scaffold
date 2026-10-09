@@ -1,0 +1,29 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "files": { "includes": ["src/**", "!src/generated/**"] },
+  "formatter": { "enabled": true, "lineWidth": 110 },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": {
+        "noRestrictedGlobals": {
+          "level": "error",
+          "options": {
+            "deniedGlobals": {
+              "fetch": "Call the noun's api role, which goes through kernel/http and the generated client.",
+              "XMLHttpRequest": "Call the noun's api role, which goes through kernel/http and the generated client."
+            }
+          }
+        }
+      },
+      "suspicious": { "noExplicitAny": "error", "noConsole": "error" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/kernel/http.ts"],
+      "linter": { "rules": { "style": { "noRestrictedGlobals": "off" } } }
+    }
+  ]
+}

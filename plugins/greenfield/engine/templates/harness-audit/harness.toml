@@ -1,0 +1,33 @@
+# Budgets and conventions for tools/toolkit/harness_audit.py. This file is the harness auditor's conventions file:
+# a finding the weekly audit raises twice becomes a rule or a tighter number here, and numbers only go down.
+# Raising one is a decision record, not an edit.
+
+[harness]
+since = "7 days ago"                       # the weekly window
+code_dirs = ["src", "tools", "tests", "migrations", "web/src"]
+instruction_files = ["AGENTS.md", "CLAUDE.md", ".claude/CLAUDE.md", "CLAUDE.local.md"]
+exclude = []                               # added to the defaults (vendor/, .venv/, generated client, worktrees)
+dup_exclude = [".claude/rules/*"]          # rendered files repeat each other by design
+phantom_ignore = []                        # globs of paths docs may name that never exist in the tree
+terms_ignore = []                          # product words that are not unbuilt systems
+path_aliases = {}                          # e.g. { ".runtime/" = "" } when docs name a copy of this repository
+
+[harness.budgets]
+always_loaded_bytes = 10000      # AGENTS.md/CLAUDE.md + imports + unscoped rules + every skill and agent description
+mandated_read_bytes = 20000      # docs an instruction file says to read before any work (status + handoff)
+doc_bytes = 12000                # any single document
+description_chars = 400          # one skill or agent description
+edit_hook_seconds = 1.0          # a synchronous hook on Edit/Write
+bash_hook_seconds = 0.2          # a hook on every Bash call, for a command it lets through
+commit_hook_seconds = 10.0       # git pre-commit
+docs_only_commit_share = 0.15    # commits that change only docs, in the window
+check_stages = 2                 # a check may run at one local stage plus push and CI
+
+[harness.caps]
+# Per-file caps for documents allowed above doc_bytes (brownfield debt). Each may only shrink.
+# "docs/status.md" = 13000
+
+[harness.samples]
+# Files the hook timer edits in its throwaway worktree. Defaults: the newest src/**/*.py and the first docs/*.md.
+# py = "src/app/invoice/ops.py"
+# md = "docs/status.md"

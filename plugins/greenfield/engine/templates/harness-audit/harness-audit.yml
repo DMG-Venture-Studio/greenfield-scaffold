@@ -1,0 +1,82 @@
+# Weekly harness audit. The collector always runs (no model, no secrets). The auditor runs only when the
+# repository variable HARNESS_MODEL is "true" and a model credential is set. Issues are mirrored only when the
+# repository variable HARNESS_ISSUES is "true". The baseline is the previous successful run's report artifact.
+name: harness-audit
+
+on:
+  schedule:
+    - cron: "17 13 * * 1"   # Mondays 13:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Previous report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh run list --workflow harness-audit.yml --status success -L 1 --json databaseId -q '.[0].databaseId')
+          if [ -n "$id" ]; then gh run download "$id" -n harness-report -D prev || true; fi
+      - name: Collect
+        run: |
+          base=""; [ -f prev/harness-report.json ] && base="--baseline prev/harness-report.json"
+          python3 tools/toolkit/harness_audit.py $base --json harness-report.json --md harness-report.md
+          cat harness-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harness-report
+          path: harness-report.*
+          retention-days: 90
+      - name: Mirror to issues
+        if: vars.HARNESS_ISSUES == 'true' && vars.HARNESS_MODEL != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/toolkit/harness_issues.py harness-report.json --markdown harness-report.md
+
+  audit:
+    needs: collect
+    if: vars.HARNESS_MODEL == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: harness-report
+      # Inputs checked against anthropics/claude-code-action action.yml (v1): prompt, claude_args,
+      # anthropic_api_key or claude_code_oauth_token, github_token. Re-check when bumping the tag.
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Run the harness-auditor subagent from .claude/agents/harness-auditor.md on harness-report.json, with
+            harness.toml and the comments of the open issue labeled harness-audit as its review log. Follow its
+            procedure and budget exactly. Write its JSON findings to harness-findings.json and its markdown
+            section to harness-findings.md. Do not edit any tracked file.
+          claude_args: >-
+            --model sonnet --max-turns 45
+            --allowedTools "Read,Grep,Glob,Write(harness-findings.*),Bash(git log:*),Bash(git show:*),Bash(gh issue view:*),Bash(gh issue list:*)"
+      - name: Mirror to issues
+        if: vars.HARNESS_ISSUES == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat harness-findings.md >> harness-report.md 2>/dev/null || true
+          python3 tools/toolkit/harness_issues.py harness-report.json --markdown harness-report.md \
+            --findings harness-findings.json
+      - name: Summary
+        run: cat harness-findings.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "no auditor output" >> "$GITHUB_STEP_SUMMARY"

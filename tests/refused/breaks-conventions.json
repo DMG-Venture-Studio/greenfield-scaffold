@@ -1,0 +1,71 @@
+{
+ "date": "8 Oct",
+ "project": {
+  "name": "Bad",
+  "slug": "Bad_Slug",
+  "package": "utils",
+  "database": "none"
+ },
+ "surfaces": [
+  "web",
+  "grpc"
+ ],
+ "nouns": [
+  {
+   "name": "order",
+   "owns": [
+    "orders"
+   ],
+   "operations": [
+    "order.process",
+    "invoice.send"
+   ],
+   "roles": [
+    "ops",
+    "model",
+    "helpers"
+   ],
+   "depends_on": [
+    "shipment"
+   ]
+  },
+  {
+   "name": "shipment",
+   "operations": [
+    "shipment.create"
+   ],
+   "depends_on": [
+    "order"
+   ]
+  },
+  {
+   "name": "order",
+   "operations": [
+    "order.show"
+   ]
+  }
+ ],
+ "flows": [
+  {
+   "name": "nightly",
+   "uses": [
+    "order.show"
+   ]
+  }
+ ],
+ "adapters": [
+  {
+   "name": "order",
+   "wraps": "stripe-sdk",
+   "implements": "payments"
+  }
+ ],
+ "first_operation": "order.ship",
+ "addons": {
+  "serial_build": true
+ },
+ "harness": {
+  "first_gate_demo": "Run it and look."
+ },
+ "_expect": "reserved or forbidden"
+}

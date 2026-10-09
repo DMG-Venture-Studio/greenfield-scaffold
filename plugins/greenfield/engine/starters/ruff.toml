@@ -1,0 +1,83 @@
+# Starter ruff configuration for a greenfield Python project. Everything on, then a short, reasoned ignore
+# list. A greenfield project has no debt, so nothing here is an exemption for existing code; per-file
+# ignores below are policy (tests, surfaces, tools), not debt. Pin the ruff version in the lockfile:
+# select = ["ALL"] means an upgrade can switch on new rules, which the debt ratchet then catches.
+
+target-version = "py312"
+line-length = 110
+src = ["src", "tests"]
+
+[format]
+docstring-code-format = true
+
+[lint]
+select = ["ALL"]
+preview = true
+explicit-preview-rules = true  # Preview rules switch on only when named below, never as a family.
+extend-select = [
+  "RUF067",   # a package __init__.py holds code: the hub that turns a package into an import cycle
+  "PLC2701",  # importing another module's _private name
+  "PLR0904",  # too many public methods on one class
+  "PLR0914",  # too many locals
+  "PLR0917",  # too many positional arguments
+  "PLR1702",  # too many nested blocks
+  "PLR6301",  # a method that never uses self is a function in disguise
+]
+ignore = [
+  # Conflicts with the formatter.
+  "COM812", "ISC001",
+  # Noise without signal.
+  "CPY",      # copyright headers
+  "TD",       # TODO formatting; FIX already refuses every TODO, FIXME, XXX and HACK
+  "EM101", "EM102", "TRY003",  # exception message style
+  "DOC",      # pydoclint wants every raise and return documented; one-line docstrings are the rule
+  "N818",     # exceptions may be named in plain words (Refused, NotFound), not only *Error
+  "D105", "D107",  # magic methods and __init__ need no docstring of their own
+  "D401",     # a docstring may say what a function is ("The body of the email."), not only what it does
+]
+# Every finding is fixed by hand unless the fix is purely mechanical.
+unfixable = ["ERA001", "F401", "F841", "B007"]
+
+[lint.pydocstyle]
+convention = "pep257"
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.pylint]
+max-args = 6
+max-positional-args = 4
+max-branches = 12
+max-statements = 50
+max-returns = 6
+max-locals = 15
+max-public-methods = 12
+max-nested-blocks = 4
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+# Heavy or costly SDKs are imported inside the one adapter function that needs them, never at module
+# level; list them per project (for example "openai", "anthropic", "torch").
+banned-module-level-imports = []
+
+[lint.flake8-tidy-imports.banned-api]
+"importlib.import_module".msg = "Loading by name hides the edge from the import contracts; import the module."
+"importlib.util.spec_from_file_location".msg = "Loading by path hides the edge; declare a way in instead."
+"runpy".msg = "A way in is a declared surface, not runpy."
+"pickle".msg = "Use a schema'd format; pickle runs code on load."
+"typing.Any".msg = "Name the type; an untyped value crosses a boundary unchecked."
+
+[lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[lint.flake8-type-checking]
+strict = true
+
+[lint.per-file-ignores]
+# Tests may assert, use magic values, reach into privates and skip annotations.
+"tests/**" = ["S101", "PLR2004", "ANN", "D", "ARG", "FBT", "SLF001", "INP001", "PLC2701", "S105", "S106"]
+# Only a surface talks to a terminal.
+"src/*/surfaces/**" = ["T20"]
+# Repository tooling is scripts, not packages: it prints and runs other programs by design.
+"tools/**" = ["INP001", "T20", "S603", "S607"]

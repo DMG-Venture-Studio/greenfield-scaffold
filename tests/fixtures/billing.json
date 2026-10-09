@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-08",
+  "project": {
+    "name": "Billing",
+    "slug": "billing",
+    "package": "billing",
+    "summary": "Billing sends a small studio's invoices and records what was paid. It replaces a spreadsheet and a folder of PDFs.",
+    "python": "3.12",
+    "database": "postgres"
+  },
+  "repo": {"org": "DMG-Venture-Studio", "name": "billing", "visibility": "private", "remote": "to-create"},
+  "surfaces": ["cli", "http", "mcp", "jobs", "web"],
+  "externals": {"surface_frameworks": {"cli": "typer", "http": "fastapi", "mcp": "fastmcp"}, "lazy": ["anthropic"]},
+  "nouns": [
+    {"name": "customer", "purpose": "Who is billed: identity, contact and billing address.", "owns": ["customers"],
+     "operations": ["customer.create", "customer.show", "customer.list"], "roles": ["ops", "store", "model"], "depends_on": []},
+    {"name": "invoice", "purpose": "What a customer owes, its lines, and whether it was sent, paid or voided.",
+     "owns": ["invoices", "invoice_lines"], "operations": ["invoice.create", "invoice.send", "invoice.void", "invoice.show"],
+     "roles": ["ops", "render", "rules", "store", "model"], "depends_on": ["customer"]},
+    {"name": "payment", "purpose": "Money received against an invoice, as the processor reported it.", "owns": ["payments"],
+     "operations": ["payment.record", "payment.show"], "roles": ["ops", "rules", "store", "model"], "depends_on": ["invoice"], "screens": false}
+  ],
+  "flows": [{"name": "month_end", "purpose": "Send every unsent invoice for the closing month, once.", "uses": ["invoice.show", "invoice.send", "customer.show"]}],
+  "adapters": [
+    {"name": "email", "wraps": "httpx", "implements": "Mailer", "purpose": "Sends one message to one address."},
+    {"name": "drafting", "wraps": "anthropic", "implements": "Drafter", "purpose": "Drafts a payment reminder in the studio's voice."}
+  ],
+  "authority": {"principals": ["operator", "billing_agent", "scheduler"], "spend": ["payment.record"]},
+  "first_operation": "customer.create",
+  "decisions": {
+    "rejected": ["- A single `billing` noun holding customers, invoices and payments: every change would touch everything.",
+                 "- Stripe as a noun: it is an outside service, so it is an adapter when it arrives."],
+    "reopens": "Payments start arriving from more than one processor, or invoices need approval before sending."
+  },
+  "addons": {"serial_build": true, "agent_skills": true, "factory": true},
+  "owner": {"name": "Ada", "writing": "- Terse and technical.\n- Consequence first; no hedging."},
+  "harness": {
+    "what_it_is": "Billing sends a small studio's invoices and records what was paid. It replaces a spreadsheet and a folder of PDFs.",
+    "who_uses_it": "The studio's operator, at month end, with the client list open, sending invoices and checking who has paid.",
+    "today_instead": "The operator copies last month's spreadsheet, edits each row, exports PDFs and emails them one by one, about three hours a month.",
+    "failure_in_a_year": "The operator is back in the spreadsheet because Billing sent an invoice twice and nobody trusted it again.",
+    "goals": "- Every invoice for the month goes out once, to the right address.\n- What each customer owes is visible in one place.",
+    "not_this": "- Not accounting: it never books revenue or tax.\n- Not a payment processor: it records what the processor reports.",
+    "floors": "- Money is integer cents, never floating point.\n- No invoice is sent twice: sending is idempotent by invoice key.",
+    "first_stage": "first-invoice",
+    "first_stage_goal": "The operator creates a customer and sees it on every way in.",
+    "first_gate_slug": "create-a-customer",
+    "first_gate_demo": "The operator creates a customer from the command line and sees the same customer from the web page and from an agent's tool call. Break it: create a valid customer beside one with an empty email and confirm only the broken one is refused, naming the field.",
+    "first_gate_tried_to_break": "an empty email; a duplicate key; a name with only spaces; the same create sent twice; a valid customer beside a broken one.",
+    "first_gate_acceptance": "The operator creates a customer on the command line and can say: I see the same customer everywhere, and a broken one was refused by name.",
+    "later_gates": "Later: one line each, until intake writes them out in full.\n\n- send-an-invoice: the operator sends one invoice and the customer receives it once.\n- record-a-payment: a payment the processor reports shows against its invoice.",
+    "interview_transcript": "**Q: Who uses it, and when?**\nOptions: the studio operator at month end (recommended); a bookkeeper.\nAnswer: \"The operator, at month end.\""
+  }
+}

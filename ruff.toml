@@ -1,0 +1,14 @@
+# The plugin's own code. The engine is mostly templates, so lines run to 120 and docstrings are required
+# only where they help; generated projects get the strict starter in plugins/greenfield/engine/starters/.
+target-version = "py312"
+line-length = 120
+# The toolkit ships into projects and is checked there, under their starter config, by tests/run.py.
+extend-exclude = ["plugins/greenfield/engine/vendor", "plugins/greenfield/engine/toolkit", "tests/toolkit"]
+
+[lint]
+select = ["ALL"]
+ignore = ["COM812", "ISC001", "CPY", "D1", "D203", "D213", "TC", "EM", "TRY003", "PLR0913", "PLR0917", "FBT001",
+          "ISC004", "S603", "S607", "T20", "INP001", "PLR2004", "C901", "D401", "PLR0911", "PLR0914", "PLR0912", "PLR0915"]
+
+[lint.per-file-ignores]
+"plugins/greenfield/engine/bootstrap.py" = ["E501"]

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-08",
+  "project": {"name": "Field Notes", "slug": "field-notes", "package": "field_notes", "summary": "Field Notes keeps a researcher's observations and lets an agent find and summarise them. It replaces a folder of text files nobody searches.", "database": "sqlite"},
+  "repo": {"org": "example-org", "name": "field-notes", "visibility": "public", "remote": "created"},
+  "surfaces": ["http", "mcp", "agent_tools"],
+  "nouns": [
+    {"name": "note", "purpose": "One observation: what was seen, where and when.", "owns": ["notes"],
+     "operations": ["note.record", "note.show", "note.search"], "roles": ["ops", "rules", "store", "model"]},
+    {"name": "summary", "purpose": "A written digest of the notes matching a question.", "owns": ["summaries"],
+     "operations": ["summary.write", "summary.show"], "roles": ["ops", "render", "store", "model"], "depends_on": ["note"]}
+  ],
+  "adapters": [{"name": "model", "wraps": "anthropic", "implements": "Writer", "purpose": "Writes a digest from notes."}],
+  "first_operation": "note.record",
+  "addons": {"serial_build": true, "agent_skills": false, "factory": false},
+  "owner": {"name": "Ada"},
+  "harness": {
+    "what_it_is": "Field Notes keeps a researcher's observations and lets an agent find and summarise them.",
+    "who_uses_it": "A field researcher, at the end of each day, recording what they saw, and later asking what they know about a place.",
+    "today_instead": "Text files in a folder, named by date, searched by memory.",
+    "failure_in_a_year": "Summaries quote notes that do not exist, so the researcher stops trusting them.",
+    "goals": "- Every note is findable by place and date.\n- A summary cites the notes it came from.",
+    "not_this": "- Not a publishing tool.",
+    "floors": "- A summary never cites a note that does not exist.",
+    "first_stage": "record",
+    "first_stage_goal": "The researcher records a note and finds it again.",
+    "first_gate_slug": "record-a-note",
+    "first_gate_demo": "Ada records a note over HTTP and an agent finds it over MCP. Break it: record a valid note beside one with no place and confirm only the broken one is refused, naming the field.",
+    "first_gate_tried_to_break": "a note with no place; a date in the future; the same note twice; a valid note beside a broken one.",
+    "first_gate_acceptance": "Ada records a note and can say: the agent found exactly what I wrote.",
+    "later_gates": "Later: one line each, until intake writes them out in full.\n\n- summarise-a-place: Ada asks for a digest of one place and every line cites a note.",
+    "interview_transcript": "**Q: Who uses it?**\nAnswer: \"Me, after fieldwork.\""
+  }
+}
