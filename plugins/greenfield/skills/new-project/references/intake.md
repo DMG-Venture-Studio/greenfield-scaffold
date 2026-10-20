@@ -58,7 +58,14 @@ at once (exit 3).
   "decisions": {"rejected": ["- An alternative offered and not chosen: why."], "reopens": "What would make this wrong."},
   "addons": {"serial_build": true, "agent_skills": true, "factory": false},
   "owner": {"name": "Ada", "writing": "- Terse and technical.\n- Consequence first."},
-  "harness": {}
+  "harness": {},
+  "secrets": {
+    "manager": {"environments": ["dev", "staging", "prod"]},
+    "credentials": [
+      {"name": "ANTHROPIC_API_KEY", "vendor": "anthropic", "adapter": "drafting", "path": "/worker",
+       "envs": ["staging", "prod"], "purpose": "The drafting adapter's calls to Claude."}
+    ]
+  }
 }
 ```
 
@@ -81,6 +88,9 @@ at once (exit 3).
 | `adapters[].implements` | The PascalCase protocol name the kernel declares for it. |
 | `decisions.rejected` | Alternatives offered at intake and not chosen, each with why. These go into the first decision record. |
 | `owner.name` | Required with serial-build: the person who runs each demo. |
+| `secrets` | Optional; its presence switches the credentials kit on. Shaped exactly as `credentials.toml`, and refused by the same rules its `check` applies. |
+| `secrets.manager` | `kind` is `infisical` (the default). `environments` defaults to dev, staging and prod; `rotate_days` to 90 outside production and 0 (rotate on events only) in it. `host` and `project_id` may stay empty until the Infisical project exists. |
+| `secrets.credentials[]` | `name` is the UPPER_SNAKE variable the code reads. `vendor` is one of anthropic, replicate, workos, openai, stripe, github, railway or other; other needs `keys_page`, the https page where its keys are minted. `adapter`, when given, is a declared adapter, and an adapter wrapping a vendor SDK must have a row. `path` is the Infisical folder (default `/`); `envs` a subset of the manager's (default all). |
 
 ## The harness block (only with `serial_build: true`)
 

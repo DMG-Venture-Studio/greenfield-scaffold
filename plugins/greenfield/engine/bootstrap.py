@@ -101,6 +101,14 @@ def _kits(p: Project) -> str:
             "   - **Agent runs.** Turn its row into a check once the first agent scenario has a recorded "
             "trace and an accepted baseline. Read the `agent-runs` skill first."
         )
+    if "credentials" in p.kits:
+        out.append(
+            "   - **Credential age.** Read the `credentials` skill first. Build its row as a weekly CI job running "
+            "`credentials.py audit`, signed in to Infisical through GitHub's OIDC (a machine identity with OIDC "
+            "auth bound to this repository, read-only on the project), so no Infisical token is stored anywhere. "
+            "Never ask for, paste or read a key's value in this session: minting is the owner's, with "
+            "`credentials.py provision`."
+        )
     return ("\n" + "\n".join(out)) if out else ""
 
 

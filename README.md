@@ -71,6 +71,7 @@ src/<package>/             kernel, catalog, flows, adapters, surfaces, boot, one
 tests/                     pytest, tests/<noun>/test_<role>.py
 tools/toolkit/             the pinned toolkit: contracts renderer, plant runner, harness audit
 plants.toml                one planted violation per starter check (web/plants.toml with a front end)
+credentials.toml           with declared secrets: every key, its vendor, folder, environments and rotation
 ruff.toml                  select = ["ALL"], a short reasoned ignore list, limits, banned APIs
 harness.toml               context budgets for the harness audit
 CONSTRAINTS.md             every check, its command, when it runs, and whether it is built yet
@@ -96,6 +97,7 @@ full rules are in `plugins/greenfield/engine/templates/docs/conventions.md`.
 | [better-cli](https://github.com/yogin16/better-cli) | a CLI way in | Its skill, vendored with its licence. Its own marketplace entry does not install on Claude Code 2.1.294; this repo's marketplace lists it with a corrected entry. |
 | [mcp-legibility](https://github.com/DMG-Venture-Studio/mcp-legibility) | an MCP way in | The plugin, plus a skill for building an MCP surface a cold agent can use. |
 | [agent-house](https://github.com/addyosmani/agent-house) | an agent or a model adapter | A skill for tracing model calls, scoring runs and holding a baseline. |
+| credentials | the intake declares secrets | Every key declared in `credentials.toml` and valued in Infisical. `credentials.py check` holds the manifest to the spec's adapters and refuses the shape of a key anywhere git would commit, with four plants; `provision`, `rotate` and `audit` mint and age keys, with a person copying each from the vendor's page and no value ever printed. |
 | harness audit | always | Context budgets, missing paths, duplicated text, repeated checks, as a commit gate and a weekly report with an auditor agent. |
 
 `plugins/greenfield/skills/new-project/references/integrations.md` records what was proven about each,
@@ -105,7 +107,7 @@ and how.
 
 | Suite | Shows |
 |---|---|
-| `python3 tests/run.py` | Covers the harness audit kit's 10 plants and 10 refused intakes, each refused for the right reason with nothing written. Then four fixture projects: a 3-noun Postgres app with a web front end and every add-on; an edge case; an MCP and agent-tools app; and a 1-noun CLI. Each passes ruff, format, pyrefly, the contracts and their drift check, deptry, pytest, the harness gate and `python -m <package>`. Each has no high or medium audit finding, and every plant is caught: 21 to 27 Python plants, plus 15 web plants with a front end. |
+| `python3 tests/run.py` | Covers the harness audit kit's 10 plants, the credentials kit's 7 cases against a fake Infisical, and 12 refused intakes, each refused for the right reason with nothing written. Then four fixture projects: a 3-noun Postgres app with a web front end, every add-on and declared credentials; an edge case; an MCP and agent-tools app; and a 1-noun CLI. Each passes ruff, format, pyrefly, the contracts and their drift check, deptry, pytest, the harness gate and `python -m <package>`. Each has no high or medium audit finding, and every plant is caught: 21 to 31 Python plants, plus 15 web plants with a front end. |
 | `python3 tests/integrations.py --harness <clone> --factory <clone>` | serial-build's own scripts treat the scaffold as already scoped and render into it without overwriting anything. Its canon check passes 10 of 10, and the harness gate still passes afterwards. factory's installer skips exactly the two files the bootstrap prompt merges. Tested against serial-build-harness 60454e1 and factory 8af1165. |
 
 ## Requirements

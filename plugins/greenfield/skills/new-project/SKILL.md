@@ -73,7 +73,9 @@ Apply the noun test from `references/intake.md` to the pitch and the briefs. Dra
 - adapters, each an outside service with the import name it wraps and the protocol it implements;
 - the ways in (`cli`, `http`, `mcp`, `jobs`, `agent_tools`, `web`);
 - the database (`postgres`, `sqlite` or `none`);
-- the first operation, which becomes the walking skeleton.
+- the first operation, which becomes the walking skeleton;
+- the credentials: one row per key an adapter or the deploy needs, with its vendor, Infisical folder and
+  environments. Every adapter that wraps a vendor SDK needs one.
 
 Show the nouns as a compact table in a message: name, purpose, operations, owns, depends on. Then ask
 "Are these the nouns?" with "Use them (Recommended)", "Change the nouns" and "Start over". Fold changes
@@ -85,7 +87,9 @@ Push back on these, naming the rule each breaks:
 - a verb such as `process`, `handle` or `manage`;
 - a flow that touches one noun;
 - a dependency ring between nouns;
-- `web` without `http`.
+- `web` without `http`;
+- one key shared across environments: a staging bug then spends production's budget, and revoking it takes
+  production down.
 
 ## 3. Repository and add-ons
 
@@ -105,6 +109,9 @@ Ask in one or two rounds:
 
   The kits follow from the spec and need no question: better-cli with a CLI, mcp-legibility with MCP,
   agent-house when an agent or a model adapter exists. State which apply.
+- **Credentials**, recommended when any adapter calls a paid vendor: the environments (dev, staging and
+  prod by default), and the credential rows drafted in step 2. They become the intake's `secrets` block,
+  and the project gets `credentials.toml`, its check with four plants, and the `credentials` skill.
 
 ## 4. The harness interview (only with serial-build)
 

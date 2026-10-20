@@ -62,6 +62,10 @@ def roots(p: Project) -> list[tuple[str, str]]:
         out.append(("migrations/", "Numbered SQL; every table owned by one noun"))
     if p.web:
         out.append(("web/", "The front end; reaches the backend only through the generated client"))
+    if "credentials" in p.kits:
+        out.append(
+            ("credentials.toml", "Every key the project uses: vendor, adapter, environments, rotation. Never a value")
+        )
     return out
 
 
@@ -113,6 +117,11 @@ def _kit_lines(p: Project) -> list[str]:
         out.append(
             "- **Agents**: the `agent-runs` skill: every model call is a traced span in its adapter, and "
             "each agent scenario is scored with agent-house against a committed baseline."
+        )
+    if "credentials" in p.kits:
+        out.append(
+            "- **Credentials**: the `credentials` skill. A new adapter that needs a key gets its row in "
+            "`credentials.toml` in the same change; an agent never asks for, prints or stores a key's value."
         )
     if p.addons["agent_skills"]:
         line = (
@@ -169,6 +178,11 @@ def constraints(p: Project) -> str:
         f"| {c.dimension} | {c.rule} | {c.command} | {c.runs_at} | {c.status} |" for c in commands.checks(p)
     )
     plants = "`plants.toml`" + (" and `web/plants.toml`" if p.web else "")
+    secrets_check = (
+        " `credentials.py check` refuses the shape of a key anywhere git would commit."
+        if "credentials" in p.kits
+        else ""
+    )
     return f"""# Constraints
 
 The quality bar for {p.name}, set before the first line of product code. Every row names the command
@@ -184,7 +198,7 @@ Read this before writing code. Do not weaken it to make a change pass.
   contract edit for code you write. When a rule blocks something the conventions require, stop and say which.
 - No unimplemented stubs: no `raise NotImplementedError`, no function whose body is `pass`, no empty `except`.
 - No skipped or deleted tests without a reason in the commit message; a skipped database test is a failure.
-- No secrets in source.
+- No secrets in source.{secrets_check}
 - This file, `ruff.toml`, `project-spec.toml`, `contracts.toml` and the web configs are not weakened to make a
   change pass.
 
@@ -241,7 +255,7 @@ Date: {p.date}
 Adapters: {adapters}. Flows: {flows}. Database: {p.database}.
 
 **The first slice is `{p.first_operation}`**, built end to end through every surface it declares.
-
+{_credentials_line(p)}
 **Add-ons:** serial-build {_on(p.addons["serial_build"])}, agent-skills {_on(p.addons["agent_skills"])},
 factory {_on(p.addons["factory"])}.
 
@@ -257,6 +271,17 @@ Sources, kept verbatim:
 
 {reopens}
 """
+
+
+def _credentials_line(p: Project) -> str:
+    if "credentials" not in p.kits:
+        return ""
+    rows = p.secrets.get("credentials")
+    count = len(rows) if isinstance(rows, list) else 0
+    return (
+        f"\n**Credentials: {count} declared in `credentials.toml`**, valued in Infisical, minted by a person, "
+        "and checked against the spec's adapters.\n"
+    )
 
 
 def _on(flag: bool) -> str:

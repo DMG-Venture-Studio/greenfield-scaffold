@@ -83,7 +83,13 @@ def build(p: Project, intake_path: Path, doc_paths: list[Path], stage: Path) -> 
     out: dict[str, str] = {"project-spec.toml": spec.render(p)}
     out |= backend.files(p) | web.files(p) | docs.files(p, briefs) | harness.files(p) | kits.files(p)
     out["plants.toml"] = plants.render(p)
-    for name in ("render_import_contracts.py", "prove_checks.py", "harness_audit.py", "harness_issues.py"):
+    for name in (
+        "render_import_contracts.py",
+        "prove_checks.py",
+        "harness_audit.py",
+        "harness_issues.py",
+        "credentials.py",
+    ):
         out[f"tools/toolkit/{name}"] = (TOOLKIT / name).read_text()
     out["tools/toolkit/README.md"] = (TOOLKIT / "README.md").read_text().replace("{{version}}", VERSION)
     out["tools/toolkit/VERSION"] = f"{VERSION}\n"

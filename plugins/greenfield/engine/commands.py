@@ -32,6 +32,7 @@ def lines(p: Project) -> list[tuple[str, str]]:
         (render_cmd(p, check=True), "contracts match the spec"),
         ("PYTHONPATH=src uv run lint-imports --config contracts.toml", "import contracts"),
         ("uv run deptry src", "dependencies"),
+        *([("uv run python tools/toolkit/credentials.py check", "credentials")] if "credentials" in p.kits else []),
         ("uv run pytest", "tests"),
         ("uv run python tools/toolkit/harness_audit.py --gate", "context budgets"),
         ("uv run python tools/toolkit/prove_checks.py plants.toml", "plants"),
@@ -56,7 +57,7 @@ def _staged(p: Project, rows: list[Check]) -> list[Check]:
         "Debt ratchet": "commit, CI",
         "Plants": "weekly in CI; push when a check changes",
     }
-    keep = {"Harness", "No bypass", "Web dead code", "MCP legibility", "Agent runs"}
+    keep = {"Harness", "No bypass", "Web dead code", "MCP legibility", "Agent runs", "Credential age"}
     return [
         row
         if row.dimension in keep
@@ -68,6 +69,29 @@ def _staged(p: Project, rows: list[Check]) -> list[Check]:
 def block(p: Project) -> str:
     """The commands as a code block body, each followed by its purpose as a comment."""
     return "\n".join(f"{c}  # {why}" for c, why in lines(p))
+
+
+def _credential_checks(p: Project) -> list[Check]:
+    """The credentials kit's two rows: the static check now, the audit against Infisical for the first session."""
+    if "credentials" not in p.kits:
+        return []
+    return [
+        Check(
+            "Credentials",
+            "every adapter wrapping a vendor SDK has a row in `credentials.toml`, and nothing git would commit "
+            "holds the shape of a key",
+            "`uv run python tools/toolkit/credentials.py check`",
+            "commit, push",
+            "starter",
+        ),
+        Check(
+            "Credential age",
+            "every declared key is present in each of its environments and inside its rotation window",
+            "`uv run python tools/toolkit/credentials.py audit`, signed in to Infisical through GitHub's OIDC",
+            "weekly in CI",
+            "to build",
+        ),
+    ]
 
 
 def checks(p: Project) -> list[Check]:
@@ -104,6 +128,7 @@ def checks(p: Project) -> list[Check]:
             "commit, push",
             "starter",
         ),
+        *_credential_checks(p)[:1],
         Check("Tests", "pass; a skipped database test is a failure", "`uv run pytest`", "push", "starter"),
         Check(
             "Harness",
@@ -212,6 +237,7 @@ def checks(p: Project) -> list[Check]:
                 "to build",
             )
         )
+    out += _credential_checks(p)[1:]
     if "agents" in p.kits:
         out.append(
             Check(

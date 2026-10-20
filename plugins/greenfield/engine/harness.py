@@ -194,6 +194,14 @@ def config(p: Project) -> dict[str, object]:
             "run": f"{contracts} && uv run pyrefly check && uv run deptry src && uv run pytest -q",
         },
     ]
+    if "credentials" in p.kits:
+        on_stop.append(
+            {
+                "name": "credentials",
+                "paths": ["src/**", "tests/**", "tools/**", "docs/**", "credentials.toml", "project-spec.toml"],
+                "run": "uv run python tools/toolkit/credentials.py check",
+            }
+        )
     generated: list[dict[str, str]] = [{"path": "contracts.toml", "regenerate": commands.render_cmd(p, check=False)}]
     if p.web:
         on_edit.append({"name": "web lint", "paths": ["web/src/*"], "run": 'cd web && npx biome lint "../$SB_FILE"'})
