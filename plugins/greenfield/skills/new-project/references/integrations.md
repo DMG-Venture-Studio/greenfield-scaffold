@@ -140,6 +140,48 @@ Proven:
 - The vendored better-cli description is 431 characters against a 400 budget. That is a low finding,
   left as upstream wrote it.
 
+## The credentials kit (when the intake declares secrets)
+
+DMG's own kit. Infisical holds the values; the project holds only the declaration.
+
+**What it does.** `credentials.toml` lists every key: its variable name, vendor, the adapter that reads it,
+its Infisical folder and environments, and how long it may live. `tools/toolkit/credentials.py`, standard
+library only, then:
+- `check`, with no network: every adapter that wraps a vendor SDK has a row, the rows agree with the spec,
+  and nothing git would commit holds the shape of an Anthropic, OpenAI, Replicate, WorkOS, Stripe or GitHub
+  key. Railway tokens are UUIDs and cannot be told from an id, so they are not scanned for;
+- `provision`, `rotate`, `adopt`, `probe` and `audit` against Infisical's v4 secrets API. A person mints each
+  key in the vendor's dashboard; the script reads the clipboard, calls the vendor with the key, stores it with
+  its mint date and fingerprint, sets Infisical's rotation reminder, and clears the clipboard. A value never
+  reaches stdout, a log, argv or a file, so an agent can run the command without seeing one.
+
+**Why minting stays manual.** On 20 October 2026 none of Anthropic, Replicate, WorkOS or Railway's project
+tokens could be minted by API: Anthropic's Admin API lists, renames and disables keys but does not create
+them, Replicate and WorkOS keys are dashboard-only, and Railway blocks `projectTokenCreate` for OAuth
+tokens. Doppler's and Infisical's rotation cover none of the four. So the kit automates everything around the
+mint and leaves the one click to a person.
+
+**How it fits.** The intake's `secrets` block is checked with the toolkit's own rules, so a scaffold never
+ships a manifest its check fails. The check is a starter row in `CONSTRAINTS.md` at the local stage, and with
+serial-build an end-of-turn hook. The audit is a "to build" row: a weekly CI job signed in to Infisical
+through GitHub's OIDC, so no Infisical token is stored.
+
+Proven:
+- `tests/toolkit/test_credentials.py`, 7 cases against a fake Infisical that rejects request fields the v4 API
+  does not document, fake vendors and a fake clipboard: each manifest mistake and a key in the tree refused;
+  a key that fails its probe or is misshapen stores nothing; folders created; present keys left alone; rotate
+  patches and refuses the key in use; audit fails on missing and overdue; nothing over plain http but
+  localhost; and no value in any command's output.
+- The billing fixture catches all four credential plants: a key in source, a row naming an undeclared adapter,
+  a row declared twice, and a vendor-SDK adapter with no row. The planted key is written into `plants.toml`
+  with an escaped hyphen, so the plants file is not itself a leak.
+- The toolkit file passes the starter's ruff (`select = ["ALL"]`), its formatter and pyrefly in every fixture,
+  without a suppression.
+
+Not proven here, and said so in the skill: how Infisical's Railway sync treats variables Railway manages
+itself (the skill says to turn on Disable Secret Deletion and check staging first), and whether the Railway
+service redeploys on a synced change. Rotation reminders are emails, so they need Infisical's SMTP.
+
 ## Kits (automatic, from the spec)
 
 | Kit | When | What goes in the project | Proven |

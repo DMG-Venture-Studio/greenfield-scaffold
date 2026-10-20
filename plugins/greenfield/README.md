@@ -43,6 +43,7 @@ with `/greenfield:new-project`, optionally followed by a pitch.
 | better-cli | the spec has a CLI | Vendored skill (its marketplace entry does not install). |
 | mcp-legibility | the spec has MCP | Plugin plus an `mcp-surface` skill. |
 | agent-house | an agent or a model adapter | An `agent-runs` skill: traced spans, scored runs, a baseline gate. |
+| credentials | the intake declares secrets | `credentials.toml`, `tools/toolkit/credentials.py` (a check with four plants; provision, rotate and audit against Infisical) and a `credentials` skill. People mint keys; no agent handles a value. |
 | harness audit | always | `harness_audit.py`: context budgets, missing paths, duplicated text, repeated checks, as a commit gate and a weekly report. Includes the `harness-auditor` agent, the weekly workflow and `harness_issues.py`. |
 
 `skills/new-project/references/integrations.md` records what was proven about each, and how.

@@ -5,9 +5,13 @@ from __future__ import annotations
 import json
 
 from intake import Project
-from kits import ALWAYS_LOADED_BUDGET
+from kits import ALWAYS_LOADED_BUDGET, row_toml
 
 BLOAT = ALWAYS_LOADED_BUDGET // len("Every word here loads. ") + 1  # one rule alone breaks the budget
+# A key-shaped value, built by concatenation so the engine holds no key-shaped literal. In plants.toml its
+# first hyphen is a TOML escape, so the plants file is not itself a leak and the planted file is.
+PLANTED_KEY = "sk-ant-" + "api03-" + "p" * 90 + "AA"
+CREDENTIALS = ["uv", "run", "python", "tools/toolkit/credentials.py", "check"]
 
 HEAD = """\
 # The planted violations for the Python side: one per rule that matters, each with the check that must
@@ -72,7 +76,7 @@ run = ["uv", "run", "python", "tools/toolkit/harness_audit.py", "--gate"]
 [[check]]
 name = "tests"
 run = ["uv", "run", "pytest", "-q"]
-"""
+""" + (f'\n[[check]]\nname = "credentials"\nrun = {json.dumps(CREDENTIALS)}\n' if "credentials" in p.kits else "")
 
 
 def _contract_plants(p: Project) -> list[str]:
@@ -289,6 +293,56 @@ def _code_plants(p: Project) -> list[str]:
     ]
 
 
+def _credential_plants(p: Project) -> list[str]:
+    """The credentials check: a key in source, two manifest mistakes, and a vendor adapter with no row."""
+    if "credentials" not in p.kits:
+        return []
+    rows = p.secrets.get("credentials")
+    first = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
+    model = f"src/{p.package}/{p.first_noun.name}/model.py"
+    leak = _plant(
+        "a vendor key written into source",
+        [(model, "append", f'\nPLANTED = "{PLANTED_KEY}"\n')],
+        "credentials",
+        "looks like a key for Anthropic",
+    )
+    return [
+        leak.replace("sk-ant-", "sk\\u002dant-"),
+        _plant(
+            "a credential that names an adapter the spec does not declare",
+            [
+                (
+                    "credentials.toml",
+                    "append",
+                    '\n[[credentials]]\nname = "PLANTED_KEY"\nvendor = "replicate"\nadapter = "planted"\n',
+                )
+            ],
+            "credentials",
+            "names adapter 'planted'",
+        ),
+        _plant(
+            "a credential declared twice",
+            [("credentials.toml", "append", "\n[[credentials]]\n" + row_toml(first))],
+            "credentials",
+            "declared twice",
+        ),
+        _plant(
+            "an adapter wrapping a vendor SDK with no credential",
+            [
+                (
+                    "project-spec.toml",
+                    "append",
+                    '\n[[adapters]]\nname = "planted"\nwraps = "stripe"\n'
+                    'implements = "Planted"\npurpose = "Planted."\n',
+                )
+            ],
+            "credentials",
+            "no credential names it",
+        ),
+    ]
+
+
 def render(p: Project) -> str:
     """The whole plants file for the Python side."""
-    return HEAD + _checks(p) + "\n" + "\n".join(_contract_plants(p) + _code_plants(p))
+    plants = _contract_plants(p) + _code_plants(p) + _credential_plants(p)
+    return HEAD + _checks(p) + "\n" + "\n".join(plants)

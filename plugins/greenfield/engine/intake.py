@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import keyword
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 
 PY_SURFACES = ("cli", "http", "mcp", "jobs", "agent_tools")
 ALL_SURFACES = (*PY_SURFACES, "web")
@@ -63,6 +65,8 @@ STANDING = (
     "open_questions",
 )
 REMOTES = ("created", "to-create", "none")
+DEFAULT_ENVIRONMENTS = ("dev", "staging", "prod")
+DEFAULT_ROTATE_DAYS = 90  # outside production; production keys rotate on events, not a calendar
 PASCAL = re.compile(r"^[A-Z][A-Za-z0-9]*$")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 OWNER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*$")
@@ -128,6 +132,8 @@ class Project:
     owner_writing: str
     repo: dict[str, str]
     harness: dict[str, str] = field(default_factory=dict)
+    # The credentials kit's manifest, shaped exactly as credentials.toml; empty when the kit is off.
+    secrets: dict[str, object] = field(default_factory=dict)
 
     @property
     def py_surfaces(self) -> tuple[str, ...]:
@@ -154,6 +160,8 @@ class Project:
         out = [k for k in ("cli", "mcp") if k in self.surfaces]
         if "agent_tools" in self.surfaces or any(a.wraps.split(".")[0] in MODEL_SDKS for a in self.adapters):
             out.append("agents")
+        if self.secrets:
+            out.append("credentials")
         return tuple(out)
 
     @property
@@ -352,6 +360,47 @@ def _repo(raw: dict, problems: list[str]) -> dict[str, str]:
     return repo
 
 
+def credential_rules() -> ModuleType:
+    """The toolkit's credentials module: one set of manifest rules for the intake and the project's check."""
+    path = Path(__file__).resolve().parent / "toolkit" / "credentials.py"
+    if "credentials_toolkit" in sys.modules:
+        return sys.modules["credentials_toolkit"]
+    module_spec = importlib.util.spec_from_file_location("credentials_toolkit", path)
+    if module_spec is None or module_spec.loader is None:
+        raise IntakeError(f"- cannot load {path}")
+    module = importlib.util.module_from_spec(module_spec)
+    sys.modules["credentials_toolkit"] = module  # dataclasses look their module up while they are built
+    module_spec.loader.exec_module(module)
+    return module
+
+
+def _secrets(raw: object, adapters: list[Adapter], problems: list[str]) -> dict[str, object]:
+    """The credentials block with its defaults filled in, refused by the same rules its check applies."""
+    if not isinstance(raw, dict) or not raw:
+        return {}
+    manager = dict(raw.get("manager") or {})
+    envs = _strs(manager.get("environments")) or list(DEFAULT_ENVIRONMENTS)
+    manager = {
+        "kind": manager.get("kind", "infisical"),
+        "host": manager.get("host", ""),
+        "project_id": manager.get("project_id", ""),
+        "environments": envs,
+        "rotate_days": manager.get("rotate_days")
+        or {e: 0 if e.startswith("prod") else DEFAULT_ROTATE_DAYS for e in envs},
+    }
+    rows = [
+        {"path": "/", "envs": envs, **{k: v for k, v in row.items() if v not in ("", None, [], {})}}
+        for row in raw.get("credentials", [])
+        if isinstance(row, dict)
+    ]
+    data: dict[str, object] = {"manager": manager, "credentials": rows}
+    rules = credential_rules()
+    problems += [f"secrets: {p}" for p in rules.manifest_problems(data, {a.name: a.wraps for a in adapters})]
+    if not rows:
+        problems.append("secrets: declare at least one credential, or leave the block out")
+    return data
+
+
 def _homes(driver: str | None, adapters: list[Adapter], frameworks: dict[str, str], problems: list[str]) -> None:
     """One outside package, one home: two homes for one package leave no import legal."""
     homes = ([(driver, "the database driver")] if driver else []) + [(a.wraps, f"adapter {a.name}") for a in adapters]
@@ -418,6 +467,7 @@ def load(path: Path) -> Project:
     if addons["serial_build"] and not _text(owner, "name"):
         problems.append("owner.name is required with serial_build: the person who runs each demo")
     repo = _repo(raw.get("repo", {}), problems)
+    secrets = _secrets(raw.get("secrets"), adapters, problems)
     driver = _text(externals, "database_driver") or DATABASES.get(database)
     _homes(driver, adapters, frameworks, problems)
     problems += [
@@ -453,4 +503,5 @@ def load(path: Path) -> Project:
         owner_writing=_text(owner, "writing"),
         repo=repo,
         harness=harness,
+        secrets=secrets,
     )

@@ -25,6 +25,17 @@
     {"name": "email", "wraps": "httpx", "implements": "Mailer", "purpose": "Sends one message to one address."},
     {"name": "drafting", "wraps": "anthropic", "implements": "Drafter", "purpose": "Drafts a payment reminder in the studio's voice."}
   ],
+  "secrets": {
+    "manager": {"environments": ["dev", "staging", "prod"]},
+    "credentials": [
+      {"name": "ANTHROPIC_API_KEY", "vendor": "anthropic", "adapter": "drafting", "path": "/worker", "envs": ["staging", "prod"],
+       "purpose": "The drafting adapter's calls to Claude."},
+      {"name": "POSTMARK_SERVER_TOKEN", "vendor": "other", "adapter": "email", "keys_page": "https://account.postmarkapp.com/servers",
+       "purpose": "Sends invoices from the studio's address."},
+      {"name": "RAILWAY_STAGING_TOKEN", "vendor": "railway", "path": "/ops", "envs": ["staging"],
+       "purpose": "The promote command's only credential; it controls staging and cannot reach production."}
+    ]
+  },
   "authority": {"principals": ["operator", "billing_agent", "scheduler"], "spend": ["payment.record"]},
   "first_operation": "customer.create",
   "decisions": {
