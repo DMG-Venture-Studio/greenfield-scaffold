@@ -108,8 +108,9 @@ def main(argv: list[str]) -> int:
         print(f"{'caught' if reason is None else 'MISSED'}  {plant['label']}")
         if reason:
             problems.append(f"{plant['label']}: {reason}")
-    if _run_checks(root, checks):
-        problems.append("the tree did not come back clean after the plants")
+    if after := _run_checks(root, checks):
+        detail = "".join(f"--- {name}\n{output}\n" for name, output in after.items())
+        problems.append(f"the tree did not come back clean after the plants: {sorted(after)}\n{detail}")
     sys.stderr.write("".join(f"{p}\n" for p in problems))
     return 1 if problems else 0
 

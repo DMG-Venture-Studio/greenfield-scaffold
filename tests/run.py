@@ -84,7 +84,7 @@ def main(argv: list[str]) -> int:
     names = [a for a in argv if not a.startswith("--") and not Path(a).is_dir()]
     keep = Path(argv[argv.index("--keep") + 1]) if "--keep" in argv else None
     fixtures = [f for f in sorted(FIXTURES.glob("*.json")) if not names or f.stem in names]
-    for kit_test in ("test_harness_audit.py", "test_harness_issues.py"):  # the audit kit's own plants
+    for kit_test in ("test_harness_audit.py", "test_harness_issues.py", "test_prove_checks.py"):  # the kits' own plants
         out = sh([sys.executable, str(ROOT / "tests" / "toolkit" / kit_test)], ROOT).stdout
         print(f"== toolkit {kit_test}: {out.count('caught')} caught")
     for bad in sorted(REFUSED.glob("*.json")):
