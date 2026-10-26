@@ -44,6 +44,13 @@ def _values(p: Project) -> dict[str, str]:
         "slug": p.slug,
         "first_operation": p.first_operation,
         "web_plants": " (`plants.toml` and `web/plants.toml`)" if p.web else " (`plants.toml`)",
+        "owner": p.owner_name or "the owner",
+        "threat_model_readers": (
+            ", and so do serial-build's red-breaker and red-fixer: the serial-build config names it as the threat "
+            "model, so every red brief carries a copy"
+            if p.addons["serial_build"]
+            else ""
+        ),
     }
 
 

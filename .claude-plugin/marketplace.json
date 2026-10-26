@@ -1,13 +1,13 @@
 {
   "name": "greenfield",
   "owner": { "name": "DMG Venture Studio" },
-  "metadata": { "description": "The greenfield scaffolder, and a corrected entry for better-cli.", "version": "0.1.0" },
+  "metadata": { "description": "The greenfield scaffolder, and a corrected entry for better-cli.", "version": "0.2.0" },
   "plugins": [
     {
       "name": "greenfield",
       "source": "./plugins/greenfield",
       "description": "Scaffold a greenfield project from a confirmed spec, with its checks proven by planted violations and the first Claude Code session's prompt.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "better-cli",

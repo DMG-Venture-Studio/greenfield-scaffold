@@ -74,7 +74,7 @@ plants.toml                one planted violation per starter check (web/plants.t
 ruff.toml                  select = ["ALL"], a short reasoned ignore list, limits, banned APIs
 harness.toml               context budgets for the harness audit
 CONSTRAINTS.md             every check, its command, when it runs, and whether it is built yet
-docs/tech/                 the conventions and how they are enforced
+docs/tech/                 the conventions, how they are enforced, and the threat model the checks defend against
 docs/decisions/            dated decision records; sources/ keeps the briefs and the bootstrap prompt
 .claude/                   path-scoped architecture rule, settings, kit skills, the harness auditor
 .github/workflows/         the weekly harness audit
