@@ -13,6 +13,9 @@ import docs
 from intake import Project
 
 INBOX = "claude_outputs"
+# The section of the enforcement document saying which people and setups the checks defend against. The
+# serial-build reviewer, red-breaker and red-fixer read it; a plugin older than 0.4.0 ignores the key.
+THREAT_MODEL = "docs/tech/enforcement.md#threat-model"
 
 
 def _bullets(text: str) -> str:
@@ -212,6 +215,7 @@ def config(p: Project) -> dict[str, object]:
         "generated": generated,
         "checks": {"on_edit": on_edit, "on_stop": on_stop},
         "red": {"test_paths": ["tests/*"] + (["web/src/*.test.ts"] if p.web else [])},
+        "threat_model": THREAT_MODEL,
     }
 
 

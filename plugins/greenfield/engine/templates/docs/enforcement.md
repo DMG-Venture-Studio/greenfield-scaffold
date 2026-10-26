@@ -30,6 +30,32 @@ says how they are owned, proven and kept, and what the first Claude Code session
    `tools/toolkit/harness_audit.py`, against the numbers in `harness.toml`, which only go down. Its `--gate`
    mode refuses a commit that breaks a budget or names a missing path in an always-loaded file.
 
+## Threat model
+
+A finding counts only if it can happen to this project. This section says which people and setups the
+checks defend against and which they do not, so a review or red-lane finding that needs a setup under "Does
+not count" is recorded for intake, unscored, instead of being folded into a check. Without it, each review
+round on a check finds the next setup nobody here uses, and every fold opens another. Every reviewer agent
+reads this section{{threat_model_readers}}. Each "Fill in" is answered from the briefs or by {{owner}} before
+the first gate; a later change is a decision record.
+
+**Who counts.** {{owner}}, and Claude sessions making honest mistakes with ordinary commands, or taking the
+shortest path to green with one ordinary edit. Fill in: anyone else who commits, deploys or runs a check here,
+such as a second developer or a bot, or "no one else".
+
+**Where checks run.** The developer machine that `make setup` prepares, and the GitHub Actions runner CI uses.
+Fill in: where the product itself runs, such as a hosting platform's containers, and any other machine that
+runs a check.
+
+**Does not count.** Hand-built git objects; non-default git configuration; filesystems nobody here uses, such
+as FAT; interpreter builds missing standard modules; deliberate deception spread over several commits; and
+anything that first bypasses the git hooks, which CI catches instead. Fill in: any other setup this project
+rules out, or "nothing else".
+
+**Reopens if.** A setup under "Does not count" becomes real here: a new kind of contributor, a new machine, or
+a filesystem or interpreter the project starts to use. Fill in: the change specific to this project that would
+bring one in.
+
 ## Who owns what
 
 | Owner | Delivers | Why there |
@@ -71,6 +97,7 @@ The enforcement work is finished when all of these hold and the session's last m
 - An attempt to `git commit --no-verify` from the session is refused, and the refusal is shown.
 - Every ledger exists and is empty.
 - Every row of `CONSTRAINTS.md` marked "to build" names a command that now exists, and the row says so.
+- The threat model above has no "Fill in" left: each is answered from the briefs or by {{owner}}.
 
 ## Maintenance cadence
 

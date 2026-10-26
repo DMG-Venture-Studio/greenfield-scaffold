@@ -1,6 +1,6 @@
 {
   "name": "greenfield",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Scaffold a greenfield Claude Code project from a confirmed spec: nouns, roles and one operation catalog; starter checks (ruff ALL, pyrefly, import contracts rendered from the spec, deptry, and for a front end dependency-cruiser, ls-lint and Biome) each proven by a planted violation; the GitHub repository; and the first Claude Code session's prompt. Optional serial-build harness, agent-skills and factory, with the CLI, MCP and agent kits the spec calls for.",
   "author": {
     "name": "DMG Venture Studio"
